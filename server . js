@@ -1,0 +1,36 @@
+const express = require("express");
+const fetch = require("node-fetch");
+const app = express();
+
+app.use(express.json());
+app.use(express.static("public"));
+
+const BOT_ID = process.env.BOT_ID || "YOUR_BOT_ID_HERE";
+const COORDINATOR_NAME = process.env.COORDINATOR_NAME || "YOUR_COORDINATOR_NAME";
+const REPLY_MESSAGE = process.env.REPLY_MESSAGE || "I can";
+
+let isAvailable = true;
+
+const CADDIE_KEYWORDS = [
+  "caddie", "caddies", "caddy", "caddys",
+  "loop", "loops", "need", "anyone", "available", "bag", "bags"
+];
+
+function isCaddieRequest(text) {
+  const lower = text.toLowerCase();
+  return CADDIE_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+app.post("/groupme", async (req, res) => {
+  res.sendStatus(200);
+  const { name, text, sender_type } = req.body;
+  if (sender_type === "bot") return;
+  if (!text) return;
+  if (name !== COORDINATOR_NAME) return;
+  if (!isCaddieRequest(text)) return;
+  if (!isAvailable) return;
+
+  await fetch("https://api.groupme.com/v3/bots/post", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bot_id: BOT_ID, text:
